@@ -241,17 +241,18 @@ supports checkpoint/restore state.
 The `hermes` runtime does not start a Hermes CLI process. The Module `CMD`
 should run an author-provided startup program that writes Hermes configuration,
 plugins, and skills, enables the Hermes API server, and then starts the gateway
-in the foreground. The adapter waits for `GET /health`, sends Apply requests to
-`POST /v1/chat/completions`, and checkpoints the `X-Hermes-Session-Id` used for
-conversation continuity.
+in the foreground. The adapter waits for `GET /health`. Hermes serves clients
+directly; `/vmm/apply` intentionally returns an unsupported-operation error.
+Checkpoint/restore uses a stateless compatibility token required by the shared
+VMM runtime interface. VMDocker checkpoints preserve the complete mounted HOME
+workspace; Export/Respawn preserves Hermes sessions and memory through the
+allowlisted `~/.hermes/state.db*` files.
 
 | Variable | Default | Description |
 |---|---|---|
 | `HERMES_GATEWAY_URL` | `http://127.0.0.1:8642` | Hermes API server base URL |
 | `HERMES_GATEWAY_TOKEN` | `API_SERVER_KEY` | Bearer token sent to the API server |
-| `HERMES_GATEWAY_MODEL` | `hermes-agent` | OpenAI-compatible request model; falls back to Spawn model parameters |
-| `HERMES_GATEWAY_TIMEOUT_MS` | `600000` | Health/client and per-Apply timeout |
-| `HERMES_SESSION_KEY` | empty | Optional long-term memory scope sent as `X-Hermes-Session-Key` |
+| `HERMES_GATEWAY_TIMEOUT_MS` | `600000` | Gateway health-client timeout |
 
 For the Hermes image used by this project, a profile can start with:
 

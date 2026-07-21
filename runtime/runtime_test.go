@@ -125,30 +125,20 @@ func TestNewRuntimeClaude(t *testing.T) {
 }
 
 func TestNewRuntimeHermes(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/chat/completions" {
-			t.Fatalf("path = %q", r.URL.Path)
-		}
-		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"ok"}}]}`))
-	}))
-	defer server.Close()
-
 	t.Setenv("RUNTIME_TYPE", RuntimeTypeHermes)
-	t.Setenv("HERMES_GATEWAY_URL", server.URL)
 	rt, err := New(vmmSchema.Env{}, "", "", nil, nil)
 	if err != nil {
 		t.Fatalf("new runtime failed: %v", err)
 	}
-	resultJSON, err := rt.Apply("target-1", vmmSchema.Meta{}, map[string]string{"Command": "hello"})
+	if _, err := rt.Apply("target-1", vmmSchema.Meta{}, map[string]string{"Command": "hello"}); err == nil || !strings.Contains(err.Error(), "does not support Apply") {
+		t.Fatalf("expected unsupported Apply error, got %v", err)
+	}
+	checkpoint, err := rt.Checkpoint()
 	if err != nil {
-		t.Fatalf("apply failed: %v", err)
+		t.Fatalf("checkpoint failed: %v", err)
 	}
-	var result vmmSchema.Result
-	if err := json.Unmarshal([]byte(resultJSON), &result); err != nil {
-		t.Fatalf("decode result: %v", err)
-	}
-	if result.Data != "ok" {
-		t.Fatalf("result data = %q", result.Data)
+	if checkpoint != `{"format":"hermes.gateway.runtime.v2"}` {
+		t.Fatalf("checkpoint = %s", checkpoint)
 	}
 }
 
