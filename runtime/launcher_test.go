@@ -3,6 +3,8 @@ package runtime
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 )
@@ -31,6 +33,21 @@ func TestLauncherForClaudeReadyRequiresCLI(t *testing.T) {
 	t.Setenv("PATH", dir)
 	if err := l.Ready(context.Background()); err != nil {
 		t.Fatalf("want ready when claude present, got %v", err)
+	}
+}
+
+func TestLauncherForHermesChecksGateway(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/health" {
+			t.Fatalf("path = %q", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	}))
+	defer server.Close()
+	t.Setenv("HERMES_GATEWAY_URL", server.URL)
+
+	if err := LauncherFor(RuntimeTypeHermes).Ready(context.Background()); err != nil {
+		t.Fatalf("Hermes gateway should be ready: %v", err)
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/cryptowizard0/vmdockerv2_agent/runtime/hermes"
 	"github.com/cryptowizard0/vmdockerv2_agent/runtime/openclaw"
 	"github.com/cryptowizard0/vmdockerv2_agent/utils"
 )
@@ -38,6 +39,8 @@ func LauncherFor(runtimeType string) Launcher {
 		return openclawLauncher{}
 	case RuntimeTypeClaude:
 		return claudeLauncher{}
+	case RuntimeTypeHermes:
+		return hermesLauncher{}
 	default:
 		return alwaysReadyLauncher{}
 	}
@@ -55,6 +58,17 @@ func (claudeLauncher) Prepare() ([]string, error) { return nil, nil }
 func (claudeLauncher) Ready(context.Context) error {
 	if _, err := exec.LookPath("claude"); err != nil {
 		return fmt.Errorf("claude CLI not on PATH: %w", err)
+	}
+	return nil
+}
+
+type hermesLauncher struct{}
+
+func (hermesLauncher) Prepare() ([]string, error) { return nil, nil }
+
+func (hermesLauncher) Ready(ctx context.Context) error {
+	if err := hermes.NewGatewayClient(hermes.LoadConfig(nil)).Ready(ctx); err != nil {
+		return fmt.Errorf("hermes gateway not ready: %w", err)
 	}
 	return nil
 }

@@ -8,6 +8,7 @@ This repository is a Go service that exposes a VMM-compatible HTTP API.
 - `runtime/`: runtime selection and implementations.
 - `runtime/testrt/`: in-memory test runtime.
 - `runtime/openclaw/`: Openclaw gateway-backed runtime (`openclaw.go`: core logic, `tools.go`: tool definitions, `setup.go`: initialization, `gateway.go`: HTTP client).
+- `runtime/hermes/`: Hermes Agent Gateway-backed runtime (`hermes.go`: VMM lifecycle, `gateway.go`: OpenAI-compatible HTTP client).
 - `common/`: shared logging and middleware.
 - `utils/`: helper utilities.
 - `scripts/build.sh`: builds the adapter entrypoint binary (`build/vmdocker-agent`, linux).
