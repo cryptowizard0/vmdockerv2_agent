@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/cryptowizard0/vmdockerv2_agent/runtime/hermes"
 	"github.com/cryptowizard0/vmdockerv2_agent/runtime/openclaw"
 	"github.com/cryptowizard0/vmdockerv2_agent/utils"
 )
@@ -66,12 +65,9 @@ type hermesLauncher struct{}
 
 func (hermesLauncher) Prepare() ([]string, error) { return nil, nil }
 
-func (hermesLauncher) Ready(ctx context.Context) error {
-	if err := hermes.NewGatewayClient(hermes.LoadConfig(nil)).Ready(ctx); err != nil {
-		return fmt.Errorf("hermes gateway not ready: %w", err)
-	}
-	return nil
-}
+// Hermes is started by Apply(Action=Start-Agent), after /vmm/spawn. Initial
+// readiness means the adapter is ready to accept Spawn.
+func (hermesLauncher) Ready(context.Context) error { return nil }
 
 type openclawLauncher struct{}
 

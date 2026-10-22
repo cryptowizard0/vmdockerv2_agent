@@ -68,9 +68,9 @@ func newRuntime(env vmmSchema.Env, nodeAddr, aoDir string, tags []goarSchema.Tag
 		}
 	case RuntimeTypeHermes:
 		if restore {
-			vm, err = hermes.NewRestored(state, spawnParams)
+			vm, err = hermes.NewRestored(env.Meta.AccId, state, spawnParams)
 		} else {
-			vm, err = hermes.NewWithParams(spawnParams)
+			vm, err = hermes.NewWithParams(env.Meta.AccId, spawnParams)
 		}
 	case RuntimeTypeTelegramCustomer:
 		if restore {

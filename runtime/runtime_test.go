@@ -126,12 +126,13 @@ func TestNewRuntimeClaude(t *testing.T) {
 
 func TestNewRuntimeHermes(t *testing.T) {
 	t.Setenv("RUNTIME_TYPE", RuntimeTypeHermes)
-	rt, err := New(vmmSchema.Env{}, "", "", nil, nil)
+	env := vmmSchema.Env{Meta: vmmSchema.Meta{AccId: "owner-1"}}
+	rt, err := New(env, "", "", nil, nil)
 	if err != nil {
 		t.Fatalf("new runtime failed: %v", err)
 	}
-	if _, err := rt.Apply("target-1", vmmSchema.Meta{}, map[string]string{"Command": "hello"}); err == nil || !strings.Contains(err.Error(), "does not support Apply") {
-		t.Fatalf("expected unsupported Apply error, got %v", err)
+	if _, err := rt.Apply("owner-1", vmmSchema.Meta{}, map[string]string{"Command": "hello"}); err != nil {
+		t.Fatalf("empty Hermes action failed: %v", err)
 	}
 	checkpoint, err := rt.Checkpoint()
 	if err != nil {
