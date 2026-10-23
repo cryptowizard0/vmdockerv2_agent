@@ -174,6 +174,7 @@ The HTTP API has the following state rules:
 | `test` | In-memory Echo/Ping implementation; default | Always ready |
 | `openclaw` | OpenClaw gateway | Gateway health request succeeds |
 | `claude` | Claude Code CLI | `claude` is available on `PATH` |
+| `hermes` | Hermes Agent Gateway API | Gateway health request succeeds |
 | `telegramcustomer` | Telegram customer runtime backed by Claude | Always ready; initialization happens on Spawn |
 
 An unsupported value can pass the always-ready launcher check, but
@@ -235,6 +236,53 @@ requires `BOT_TOKEN` or a `botToken` Spawn tag. Its Apply operation is currently
 not implemented; the runtime starts the Telegram integration during Spawn and
 supports checkpoint/restore state.
 
+### Hermes Gateway configuration
+
+The `hermes` runtime does not start a Hermes CLI process. The Module `CMD`
+should run an author-provided startup program that writes Hermes configuration,
+plugins, and skills, enables the Hermes API server, and then starts the gateway
+in the foreground. The adapter waits for `GET /health`. Hermes serves clients
+directly; `/vmm/apply` intentionally returns an unsupported-operation error.
+Checkpoint/restore uses a stateless compatibility token required by the shared
+VMM runtime interface. VMDocker checkpoints preserve the complete mounted HOME
+workspace; Export/Respawn preserves Hermes sessions and memory through the
+allowlisted `~/.hermes/state.db*` files.
+
+| Variable | Default | Description |
+|---|---|---|
+| `HERMES_GATEWAY_URL` | `http://127.0.0.1:8642` | Hermes API server base URL |
+| `HERMES_GATEWAY_TOKEN` | `API_SERVER_KEY` | Bearer token sent to the API server |
+| `HERMES_GATEWAY_TIMEOUT_MS` | `600000` | Gateway health-client timeout |
+
+For the Hermes image used by this project, a profile can start with:
+
+```toml
+[dockerfile]
+FROM = "sandytest456/hermes-agent:linux-full"
+bin = "bin"
+CMD = ["start-hermes"]
+
+[vmdocker]
+public = [
+  "~/skills/*",
+  "~/persona/*",
+  "~/.hermes/plugin/*",
+  "~/.hermes/state.db*",
+]
+```
+
+Place the executable startup program at `bin/start-hermes`. It must set at
+least `API_SERVER_ENABLED=true` and `API_SERVER_KEY`, then keep the gateway in
+the foreground, normally by replacing itself with `hermes gateway run`. Pass
+the same key to the adapter as `HERMES_GATEWAY_TOKEN`, or let it inherit the
+shared `API_SERVER_KEY` environment variable.
+
+`~/.hermes/state.db*` includes the SQLite database and any WAL/SHM companions
+needed to resolve a checkpointed session after Export and a fresh Spawn. It can
+contain conversation history, so include it only when session continuity is
+intended. Do not export `~/.hermes/.env` or `config.yaml`; recreate configuration
+and inject credentials from the startup program instead.
+
 ## Repository layout
 
 ```text
@@ -243,6 +291,7 @@ supports checkpoint/restore state.
 ├── common/                 Logging and HTTP middleware
 ├── runtime/                Runtime selection and implementations
 │   ├── claudecode/
+│   ├── hermes/
 │   ├── openclaw/
 │   ├── telegramcustomer/
 │   └── testrt/
@@ -261,6 +310,9 @@ supports checkpoint/restore state.
 - For `claude`, verify the literal `claude` command is available on `PATH`.
   The health launcher checks that command even when `CLAUDE_CODE_BIN` is set
   for Apply calls.
+- For `hermes`, verify the Module startup command enabled the API server and
+  started `hermes gateway run`; then check `HERMES_GATEWAY_URL`,
+  `HERMES_GATEWAY_TOKEN`, and `VMDOCKER_USER_STARTUP_LOG`.
 - Check `VMDOCKER_USER_STARTUP_LOG` for command output.
 
 ### OpenClaw fails before the API starts
@@ -271,7 +323,7 @@ workspace directories are writable.
 
 ### Spawn reports `runtime type not supported`
 
-Use one of `test`, `openclaw`, `claude`, or `telegramcustomer`. The value must
+Use one of `test`, `openclaw`, `claude`, `hermes`, or `telegramcustomer`. The value must
 be passed into the container at Spawn time, normally with
 `Container-Env-RUNTIME_TYPE`.
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/cryptowizard0/vmdockerv2_agent/common"
 	"github.com/cryptowizard0/vmdockerv2_agent/runtime/claudecode"
+	"github.com/cryptowizard0/vmdockerv2_agent/runtime/hermes"
 	"github.com/cryptowizard0/vmdockerv2_agent/runtime/openclaw"
 	"github.com/cryptowizard0/vmdockerv2_agent/runtime/schema"
 	"github.com/cryptowizard0/vmdockerv2_agent/runtime/telegramcustomer"
@@ -21,6 +22,7 @@ const (
 	RuntimeTypeTest             = "test"
 	RuntimeTypeOpenclaw         = "openclaw"
 	RuntimeTypeClaude           = "claude"
+	RuntimeTypeHermes           = "hermes"
 	RuntimeTypeTelegramCustomer = "telegramcustomer"
 )
 
@@ -63,6 +65,12 @@ func newRuntime(env vmmSchema.Env, nodeAddr, aoDir string, tags []goarSchema.Tag
 			vm, err = claudecode.NewRestored(state, spawnParams)
 		} else {
 			vm, err = claudecode.NewWithParams(spawnParams)
+		}
+	case RuntimeTypeHermes:
+		if restore {
+			vm, err = hermes.NewRestored(env.Meta.AccId, state, spawnParams)
+		} else {
+			vm, err = hermes.NewWithParams(env.Meta.AccId, spawnParams)
 		}
 	case RuntimeTypeTelegramCustomer:
 		if restore {

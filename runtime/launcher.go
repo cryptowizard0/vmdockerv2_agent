@@ -38,6 +38,8 @@ func LauncherFor(runtimeType string) Launcher {
 		return openclawLauncher{}
 	case RuntimeTypeClaude:
 		return claudeLauncher{}
+	case RuntimeTypeHermes:
+		return hermesLauncher{}
 	default:
 		return alwaysReadyLauncher{}
 	}
@@ -58,6 +60,14 @@ func (claudeLauncher) Ready(context.Context) error {
 	}
 	return nil
 }
+
+type hermesLauncher struct{}
+
+func (hermesLauncher) Prepare() ([]string, error) { return nil, nil }
+
+// Hermes is started by Apply(Action=Start-Agent), after /vmm/spawn. Initial
+// readiness means the adapter is ready to accept Spawn.
+func (hermesLauncher) Ready(context.Context) error { return nil }
 
 type openclawLauncher struct{}
 

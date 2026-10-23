@@ -34,6 +34,12 @@ func TestLauncherForClaudeReadyRequiresCLI(t *testing.T) {
 	}
 }
 
+func TestLauncherForHermesIsReadyBeforeAgentStarts(t *testing.T) {
+	if err := LauncherFor(RuntimeTypeHermes).Ready(context.Background()); err != nil {
+		t.Fatalf("Hermes adapter should be ready before Start-Agent: %v", err)
+	}
+}
+
 func TestLauncherForTestAlwaysReady(t *testing.T) {
 	l := LauncherFor(RuntimeTypeTest)
 	env, err := l.Prepare()
